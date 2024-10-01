@@ -36,13 +36,13 @@ keywords = {
         "have a presentation to prepare for", "have a deadline coming up"
     ]
 }
-GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest"  # Example endpoint
-GEMINI_API_KEY = "AIzaSyBm2N_eVqKHtmi7LxCG-yF7FuQRSfS6RRE"
+GEMINI_API_ENDPOINT = "Gemini_api_endpoint"  # Example endpoint
+GEMINI_API_KEY = "Gemini_api_key"
 
 def categorize_message_with_gemini(message):
     # Prepare the request headers and payload for Gemini API
     headers = {
-        'Authorization': f'Bearer {AIzaSyBm2N_eVqKHtmi7LxCG-yF7FuQRSfS6RRE}',
+        'Authorization': f'Bearer {Gemini_api_key}',
         'Content-Type': 'application/json'
     }
     
