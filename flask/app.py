@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -36,13 +37,13 @@ keywords = {
         "have a presentation to prepare for", "have a deadline coming up"
     ]
 }
-GEMINI_API_ENDPOINT = "Gemini_api_endpoint"  # Example endpoint
-GEMINI_API_KEY = "Gemini_api_key"
+GEMINI_API_ENDPOINT = os.getenv("Gemini_api_endpoint")  # Example endpoint
+GEMINI_API_KEY = os.getenv("Gemini_api_key")
 
 def categorize_message_with_gemini(message):
     # Prepare the request headers and payload for Gemini API
     headers = {
-        'Authorization': f'Bearer {Gemini_api_key}',
+        'Authorization': f'Bearer {GEMINI_API_KEY}',
         'Content-Type': 'application/json'
     }
     
@@ -50,15 +51,21 @@ def categorize_message_with_gemini(message):
         "text": message
     }
 
-    # Make the API request to Gemini
-    response = requests.post(GEMINI_API_ENDPOINT, headers=headers, json=payload)
+    try:
+   # Make the API request to Gemini
+        response = requests.post(GEMINI_API_ENDPOINT, headers=headers, json=payload)
 
-    if response.status_code == 200:
+        if response.status_code == 200:
         # Assuming the API returns a JSON object with a 'category' field
-        response_data = response.json()
-        return response_data.get('category', None)
-    else:
+            response_data = response.json()
+            return response_data.get('category', None)
+        else:
+            print(f"Error from Gemini API: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Exception occurred while calling Gemini API: {e}")
         return None
+        
 
 def categorize_message(message):
     message_lower = message.lower()
@@ -70,7 +77,9 @@ def categorize_message(message):
 @app.route('/chat', methods=['POST'])
 def chat():
     user_message = request.json['message']
-    category = categorize_message(user_message)
+    category = categorize_message_with_gemini(user_message)
+    if not category:
+        category = categorize_message(user_message)
 
     if category == "time_management":
         response = "Ohh that time management thing managing your time and studies is really not a big task if you just listen the story am going to tell."
