@@ -72,9 +72,4 @@ def start_background_ping():
     ping_thread = threading.Thread(target=ping_api, daemon=True)
     ping_thread.start()
 
-if __name__ == '__main__':
-    # Start the background pinging thread
-    start_background_ping()
-    
-    # Run the Flask app
-    app.run(debug=False, port=5000)
+ 
