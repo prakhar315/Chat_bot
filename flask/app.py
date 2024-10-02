@@ -60,5 +60,10 @@ def chat():
 
     return jsonify({"response": response})
 
+
+@app.route('/status', methods=['GET'])
+def status():
+    return jsonify({"status": "ok"})
+
 # if __name__ == '__main__':
     # app.run(debug=True)
