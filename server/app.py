@@ -1,64 +1,55 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import requests
 import os
 import threading
 import time
-
+import google.generativeai as genai
+import requests
 app = Flask(__name__)
 CORS(app)
 
-# Gemini API Configuration
-GEMINI_API_ENDPOINT = os.getenv("GEMINI_API_ENDPOINT")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-PING_API_ENDPOINT = os.getenv("PING_API_ENDPOINT")  # Add the endpoint you want to ping
-PING_INTERVAL = int(os.getenv("PING_INTERVAL", 20))  # Default to 60 seconds
+# Google Generative AI Configuration
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-def call_gemini_api(message):
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": message
-                    }
-                ]
-            }
-        ]
-    }
-    
-    try:
-        response = requests.post(f'{GEMINI_API_ENDPOINT}?key={GEMINI_API_KEY}', headers=headers, json=payload)
-        print(response.text)
-        if response.status_code == 200:
-            response_data = response.json()
-            candidates = response_data.get('candidates', [])
-            
-            if candidates:
-                generated_response = candidates[0]['content']['parts'][0]['text']
-                return generated_response
-            else:
-                return "I couldn't understand that, please try again."
-        else:
-            print(f"Error from Gemini API: {response.status_code}, {response.text}")
-            return "Sorry, I'm having trouble processing your request right now."
-    
-    except Exception as e:
-        print(f"Exception occurred while calling Gemini API: {e}")
-        return "There was an issue communicating with the AI service."
+# Create a generation configuration
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Initialize the model with the specified model name and configuration
+model = genai.GenerativeModel(
+    model_name="tunedModels/customdata-1-wkpce19h9ggt",
+    generation_config=generation_config,
+)
+
+# Pinging Configuration
+PING_API_ENDPOINT = "https://chat-bot-vsbx.onrender.com/status"  # Add the endpoint you want to ping
+PING_INTERVAL = int(10)  # Default to 20 seconds
+
+def send_message_to_model(user_message):
+    # Send a message to the generative model
+    chat_session = model.start_chat(history=[])
+    response = chat_session.send_message(user_message)
+    return response.text
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.json['message']
-    response = call_gemini_api(user_message)
-    return jsonify({"response": response})
+    # Get the user's message from the POST request
+    user_message = request.json.get('message', '')
+    
+    # Generate a response using the Google AI model
+    response_text = send_message_to_model(user_message)
+    
+    # Return the generated response as JSON
+    return jsonify({"response": response_text})
 
 @app.route('/status', methods=['GET'])
 def status():
+    # Simple status check endpoint
     return jsonify({"status": "ok"})
 
 def ping_api():
@@ -79,4 +70,11 @@ def ping_api():
 # Start the ping script in a background thread
 def start_background_ping():
     ping_thread = threading.Thread(target=ping_api, daemon=True)
-    ping_thread.start() 
+    ping_thread.start()
+
+if __name__ == '__main__':
+    # Start the background pinging thread
+    start_background_ping()
+    
+    # Run the Flask app
+    app.run(debug=False, port=5000)

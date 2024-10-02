@@ -20,3 +20,4 @@ Flask==3.0.3
 Flask-Cors==5.0.0
 requests==2.31.0
 gunicorn==20.1.0
+google-generativeai==0.8.2
