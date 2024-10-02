@@ -72,4 +72,6 @@ def start_background_ping():
     ping_thread = threading.Thread(target=ping_api, daemon=True)
     ping_thread.start()
 
- 
+@app.before_first_request
+def initialize_background_ping():
+    start_background_ping()
